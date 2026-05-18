@@ -502,7 +502,7 @@ export default function DashboardPage() {
 }
 
 // ─── Add Product Modal Component ──────────────────────────────────────────────
-export function AddProductModal({ onClose }: { onClose: () => void }) {
+function AddProductModal({ onClose }: { onClose: () => void }) {
   const WOOD_CATEGORIES = ['Timber', 'Bamboo', 'Plywood', 'Engineered Wood', 'Veneer', 'Charcoal', 'Other'];
   const [form, setForm] = useState({
     name: '', species: '', category: 'Timber', description: '',
