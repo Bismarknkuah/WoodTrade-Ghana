@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { use } from 'react';
 
-// In production: fetch from API using params.id
 const mockPassport = {
   passportId: 'WTG-1K3M9Z-AB12CD34',
   product: {
@@ -31,7 +31,8 @@ const mockPassport = {
   ],
 };
 
-export default function ProductPassportPage({ params }: { params: { id: string } }) {
+export default function ProductPassportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const p = mockPassport;
 
   return (
@@ -44,6 +45,7 @@ export default function ProductPassportPage({ params }: { params: { id: string }
             Digital Product Passport
           </h1>
           <div className="font-mono text-amber-200 text-sm mt-2">{p.passportId}</div>
+          <div className="text-amber-300 text-xs mt-1 opacity-70">#{id}</div>
         </div>
       </div>
 
