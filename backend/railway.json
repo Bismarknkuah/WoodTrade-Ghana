@@ -1,0 +1,9 @@
+Set-Content "C:\Users\baris\WoodTrade-Ghana\backend\railway.json" '{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}'
