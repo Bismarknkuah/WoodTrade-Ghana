@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { use } from 'react';
 
 const ORDER_STATUSES = [
   'pending',
@@ -36,7 +37,6 @@ const statusIcons: Record<string, string> = {
   delivered: '🎉',
 };
 
-// Mock order data – replace with API fetch
 const mockOrder = {
   orderNumber: 'WTG-ORD-00000001',
   status: 'shipped',
@@ -61,13 +61,14 @@ const mockOrder = {
   ],
 };
 
-export default function TrackOrderPage({ params }: { params: { orderNumber: string } }) {
+export default function TrackOrderPage({ params }: { params: Promise<{ orderNumber: string }> }) {
+  const { orderNumber } = use(params);
   const order = mockOrder;
   const currentIndex = ORDER_STATUSES.indexOf(order.status);
+  const progressPct = Math.round((currentIndex / (ORDER_STATUSES.length - 1)) * 100);
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
       <div className="bg-[#5a3e2b] text-white py-8 px-4">
         <div className="max-w-3xl mx-auto">
           <Link href="/" className="text-amber-400 text-sm hover:underline mb-3 inline-block">
@@ -77,11 +78,11 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
             Order Tracking
           </h1>
           <div className="font-mono text-amber-200">{order.orderNumber}</div>
+          <div className="text-amber-300 text-xs mt-1 opacity-70">#{orderNumber}</div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {/* Status Banner */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <div className="flex items-center gap-4">
             <div className="text-5xl">{statusIcons[order.status]}</div>
@@ -99,17 +100,13 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <h3 className="font-bold text-stone-800 mb-5">Shipment Progress</h3>
           <div className="relative">
-            {/* Background line */}
             <div className="absolute top-4 left-4 right-4 h-1 bg-stone-200 rounded-full" />
-            {/* Progress line */}
             <div
               className="absolute top-4 left-4 h-1 bg-amber-500 rounded-full transition-all duration-500"
-              style={{ width: `${(currentIndex / (ORDER_STATUSES.length - 1)) * calc}%`.replace('calc', '') }}
-              style={{ width: `${Math.round((currentIndex / (ORDER_STATUSES.length - 1)) * 100)}%`, right: 'auto' }}
+              style={{ width: `${progressPct}%`, right: 'auto' }}
             />
             <div className="flex justify-between relative">
               {ORDER_STATUSES.map((s, i) => {
@@ -117,13 +114,7 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
                 const current = i === currentIndex;
                 return (
                   <div key={s} className="flex flex-col items-center gap-2" style={{ width: '12.5%' }}>
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 z-10 transition-all ${
-                        done
-                          ? 'bg-amber-500 border-amber-500 text-white'
-                          : 'bg-white border-stone-300 text-stone-400'
-                      } ${current ? 'ring-4 ring-amber-200 scale-110' : ''}`}
-                    >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 z-10 transition-all ${done ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'} ${current ? 'ring-4 ring-amber-200 scale-110' : ''}`}>
                       {done ? '✓' : i + 1}
                     </div>
                     <span className={`text-xs text-center leading-tight ${done ? 'text-amber-700 font-semibold' : 'text-stone-400'}`}>
@@ -136,7 +127,6 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
           </div>
         </div>
 
-        {/* Shipping Info */}
         {order.trackingNumber && (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
             <h3 className="font-bold text-stone-800 mb-4">Shipping Information</h3>
@@ -158,7 +148,6 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
           </div>
         )}
 
-        {/* Timeline */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <h3 className="font-bold text-stone-800 mb-5">Event Timeline</h3>
           <div className="space-y-4">
@@ -184,7 +173,6 @@ export default function TrackOrderPage({ params }: { params: { orderNumber: stri
           </div>
         </div>
 
-        {/* Order Summary */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <h3 className="font-bold text-stone-800 mb-4">Order Summary</h3>
           <table className="w-full text-sm">
