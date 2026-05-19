@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GHANA_REGIONS, getDistrictNames } from '../../../lib/ghanaRegions';
@@ -11,27 +11,6 @@ const ROLES = [
   { value: 'manufacturer', label: '🏭 Manufacturer', desc: 'Sell processed and engineered wood products' },
   { value: 'reseller', label: '🚢 Reseller / Exporter', desc: 'Trade and export wood to international markets' },
 ];
-
-// Document requirements per role
-const ROLE_DOCS: Record<string, { required: string[]; note: string }> = {
-  buyer: { required: [], note: '' },
-  carpenter: {
-    required: ['Business Registration Certificate', 'Ghana Card (National ID)'],
-    note: 'As a carpenter selling finished works, you only need your Business Certificate and Ghana Card. No forestry documents required.',
-  },
-  seller: {
-    required: ['TIDD License', 'Forestry Commission Certificate', 'Business Registration', 'Tax Clearance'],
-    note: 'Raw timber sellers require full forestry compliance documentation.',
-  },
-  manufacturer: {
-    required: ['TIDD License', 'Business Registration', 'Tax Clearance', 'Environmental Permit'],
-    note: 'Manufacturers require forestry and environmental compliance documentation.',
-  },
-  reseller: {
-    required: ['Export License (GEPC)', 'Business Registration', 'Tax Clearance', 'FLEGT License'],
-    note: 'Exporters require full export compliance documentation.',
-  },
-};
 
 const inputClass = 'w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all bg-white';
 const selectClass = 'w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all bg-white appearance-none cursor-pointer';
@@ -52,9 +31,13 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const passportRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    fullName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     email: '',
     phone: '',
     password: '',
@@ -67,21 +50,32 @@ function RegisterContent() {
     businessRegNumber: '',
     taxIdNumber: '',
     country: 'Ghana',
+    passportPhoto: null as File | null,
   });
 
   const update = (field: string, value: string) => {
     setForm(prev => {
       const next = { ...prev, [field]: value };
-      // Reset district when region changes
       if (field === 'region') next.district = '';
       return next;
     });
   };
 
+  const handlePassportUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Passport photo must be under 5MB'); return; }
+    setForm(prev => ({ ...prev, passportPhoto: file }));
+    const reader = new FileReader();
+    reader.onload = () => setPassportPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const districts = getDistrictNames(form.region);
 
   const validateStep2 = () => {
-    if (!form.fullName.trim()) return 'Full name is required';
+    if (!form.firstName.trim()) return 'First name is required';
+    if (!form.lastName.trim()) return 'Last name is required';
     if (!form.email.trim() || !form.email.includes('@')) return 'Valid email is required';
     if (!form.phone.trim()) return 'Phone number is required';
     if (form.password.length < 8) return 'Password must be at least 8 characters';
@@ -111,11 +105,13 @@ function RegisterContent() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+      const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(' ');
+      const res = await fetch(`https://woodtrade-ghana-production.up.railway.app/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.fullName,
+          fullName: fullName,
+          name: fullName,
           email: form.email,
           phone: form.phone,
           password: form.password,
@@ -173,8 +169,6 @@ function RegisterContent() {
         <div className="text-center mb-6">
           <Link href="/" className="text-2xl font-bold text-[#5a3e2b]">🌳 WoodTrade Ghana</Link>
           <h1 className="text-xl font-bold text-stone-900 mt-3">Create Account</h1>
-
-          {/* Step indicators */}
           <div className="flex items-center justify-center gap-2 mt-4">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center gap-2">
@@ -196,7 +190,7 @@ function RegisterContent() {
           </div>
         )}
 
-        {/* ── STEP 1: Role ── */}
+        {/* STEP 1: Role */}
         {step === 1 && (
           <div className="space-y-3">
             <h2 className="font-semibold text-stone-800 mb-3">I want to...</h2>
@@ -220,14 +214,53 @@ function RegisterContent() {
           </div>
         )}
 
-        {/* ── STEP 2: Personal Info ── */}
+        {/* STEP 2: Personal Info */}
         {step === 2 && (
           <div className="space-y-4">
             <h2 className="font-semibold text-stone-800 mb-2">Personal Information</h2>
 
-            <Field label="Full Name *">
-              <input type="text" value={form.fullName} onChange={e => update('fullName', e.target.value)}
-                placeholder="Kwame Asante" className={inputClass} />
+            {/* Passport Photo Upload */}
+            <div>
+              <label className={labelClass}>Passport Photo *</label>
+              <div
+                onClick={() => passportRef.current?.click()}
+                className="border-2 border-dashed border-stone-300 hover:border-amber-400 rounded-xl p-4 text-center cursor-pointer transition-all"
+              >
+                {passportPreview ? (
+                  <div className="flex items-center gap-4">
+                    <img src={passportPreview} alt="Passport" className="w-16 h-16 rounded-xl object-cover border-2 border-amber-300" />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-green-600">✓ Photo uploaded</p>
+                      <p className="text-xs text-stone-400">{form.passportPhoto?.name}</p>
+                      <p className="text-xs text-amber-600 mt-1">Click to change</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-4xl mb-2">📷</div>
+                    <p className="text-sm font-medium text-stone-600">Click to upload passport photo</p>
+                    <p className="text-xs text-stone-400 mt-1">JPG, PNG up to 5MB</p>
+                  </div>
+                )}
+              </div>
+              <input ref={passportRef} type="file" accept="image/*" onChange={handlePassportUpload} className="hidden" />
+            </div>
+
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First Name *">
+                <input type="text" value={form.firstName} onChange={e => update('firstName', e.target.value)}
+                  placeholder="Kwame" className={inputClass} />
+              </Field>
+              <Field label="Last Name *">
+                <input type="text" value={form.lastName} onChange={e => update('lastName', e.target.value)}
+                  placeholder="Asante" className={inputClass} />
+              </Field>
+            </div>
+
+            <Field label="Middle Name (Optional)">
+              <input type="text" value={form.middleName} onChange={e => update('middleName', e.target.value)}
+                placeholder="Kofi" className={inputClass} />
             </Field>
 
             <Field label="Email Address *">
@@ -290,7 +323,7 @@ function RegisterContent() {
           </div>
         )}
 
-        {/* ── STEP 3: Business & Location ── */}
+        {/* STEP 3: Business & Location */}
         {step === 3 && (
           <div className="space-y-4">
             <h2 className="font-semibold text-stone-800 mb-2">Business & Location</h2>
@@ -312,7 +345,6 @@ function RegisterContent() {
               </>
             )}
 
-            {/* Region */}
             <Field label="Region *">
               <div className="relative">
                 <select value={form.region} onChange={e => update('region', e.target.value)} className={selectClass}>
@@ -325,7 +357,6 @@ function RegisterContent() {
               </div>
             </Field>
 
-            {/* District — only shows after region is selected */}
             {form.region && districts.length > 0 && (
               <Field label={`District in ${form.region} *`}>
                 <div className="relative">
@@ -346,7 +377,6 @@ function RegisterContent() {
                 rows={2} placeholder="Street, Town, Ghana" />
             </Field>
 
-            {/* Summary preview */}
             {form.region && (
               <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-600 space-y-1">
                 <div className="font-semibold text-stone-700 mb-1">📍 Location Summary</div>
