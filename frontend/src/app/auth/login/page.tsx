@@ -14,7 +14,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+      const res = await fetch(`https://woodtrade-ghana-production.up.railway.app/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email.toLowerCase().trim(), password: form.password }),
@@ -57,7 +57,7 @@ export default function LoginPage() {
               type="email" value={form.email} autoComplete="email"
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               placeholder="kwame@timber.com"
-              className="input-field"
+              className="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'} value={form.password} autoComplete="current-password"
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="Your password"
-                className="input-field pr-10"
+                className="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 pr-10"
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-sm">
@@ -94,24 +94,20 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo accounts */}
-        <div className="mt-5 bg-stone-50 border border-stone-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-stone-600 mb-2">🧪 Demo Accounts</p>
-          <div className="space-y-1.5">
-            {[
-              { role: 'Admin', email: 'admin@woodtrade.gh', pass: 'Admin@1234' },
-              { role: 'Seller', email: 'kofi@ashantiforest.gh', pass: 'Seller@1234' },
-              { role: 'Buyer', email: 'buyer@timberusa.com', pass: 'Buyer@1234' },
-            ].map(a => (
-              <button key={a.role} onClick={() => setForm({ email: a.email, password: a.pass })}
-                className="w-full text-left text-xs bg-white border border-stone-200 hover:border-amber-300 rounded-lg px-3 py-2 transition-all">
-                <span className="font-semibold text-amber-700">{a.role}:</span>{' '}
-                <span className="text-stone-600">{a.email}</span>
-              </button>
-            ))}
+        {/* Guest browse option */}
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-stone-200" />
           </div>
-          <p className="text-xs text-stone-400 mt-2">Run <code className="bg-stone-100 px-1 rounded">npm run seed</code> in backend first</p>
+          <div className="relative flex justify-center text-xs text-stone-400">
+            <span className="bg-white px-3">or</span>
+          </div>
         </div>
+
+        <Link href="/catalog"
+          className="w-full block text-center border border-stone-300 hover:border-amber-400 text-stone-700 hover:text-amber-700 font-semibold py-3 rounded-xl transition-all text-sm">
+          Browse Catalog as Guest →
+        </Link>
 
         <p className="text-center text-stone-500 text-sm mt-6">
           Don&apos;t have an account?{' '}
