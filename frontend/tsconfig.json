@@ -1,4 +1,4 @@
-Set-Content C:\Users\baris\WoodTrade-Ghana\frontend\tsconfig.json '{
+{
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -18,4 +18,4 @@ Set-Content C:\Users\baris\WoodTrade-Ghana\frontend\tsconfig.json '{
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
-}'
+}
